@@ -58,7 +58,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{c}有多少注册用户？",
+                f"用户表中所在城市为 {c} 的记录有多少条？",
                 f"SELECT COUNT(*) FROM users WHERE city='{c}'",
                 "easy",
                 ["filter"],
@@ -188,7 +188,7 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             40,
-            "上海用户的平均 VIP 等级是多少？",
+            "用户表中城市为上海的用户，平均 VIP 等级是多少？",
             "SELECT AVG(vip_level) FROM users WHERE city='上海'",
             "easy",
             ["aggregate"],
@@ -242,7 +242,7 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             49,
-            "业务数据覆盖了哪几种设备类型？共几种？",
+            "业务数据里的设备类型一共有几种？",
             "SELECT COUNT(DISTINCT device) FROM daily_user_activity",
             "easy",
             ["distinct"],
@@ -323,7 +323,7 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             58,
-            "一共出现过哪几种支付方式？",
+            "支付方式一共有几种？",
             "SELECT COUNT(DISTINCT method) FROM payments",
             "easy",
             ["distinct"],
@@ -394,7 +394,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月下单量最多的前 {n} 个城市是哪些？（不含未填城市的订单）",
+                f"{m} 月下单量最多的前 {n} 个城市及其订单量？（按用户资料的 city 字段统计，不含未填城市的订单）",
                 f"SELECT u.city AS city, COUNT(*) AS cnt FROM orders o JOIN users u "
                 f"ON o.user_id=u.id WHERE u.city IS NOT NULL AND {month_filter('o.created_at', m)} "
                 f"GROUP BY u.city ORDER BY cnt DESC LIMIT {n}",
@@ -406,7 +406,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月销售额最高的前 5 个二级类目及其销售额是多少？",
+                f"{m} 月销售额最高的前 5 个二级类目及其销售额？（按订单明细的 (单价-折扣)*数量 求和）",
                 f"SELECT c.name AS category, SUM((oi.unit_price-oi.discount)*oi.quantity) AS sales "
                 f"FROM order_items oi JOIN orders o ON oi.order_id=o.id "
                 f"JOIN products p ON oi.product_id=p.id JOIN categories c ON p.category_id=c.id "
@@ -504,7 +504,7 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             89,
-            "VIP 等级大于 0 的用户的人均下单金额是多少？",
+            "VIP 等级大于 0 的用户的人均下单金额是多少？（不排除任何订单状态）",
             "SELECT SUM(o.total_amount)/COUNT(DISTINCT o.user_id) AS arppu FROM orders o "
             "JOIN users u ON o.user_id=u.id WHERE u.vip_level>0",
             "medium",
@@ -525,7 +525,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月的平均订单金额是多少？",
+                f"{m} 月全部订单的平均订单金额是多少？（不排除任何状态）",
                 f"SELECT AVG(total_amount) FROM orders WHERE {month_filter('created_at', m)}",
                 "medium",
                 ["date_format_trap", "null"],
@@ -631,7 +631,7 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             105,
-            "从未发表过评价的注册用户有多少个？",
+            "用户表中从未发表过评价的记录有多少条？",
             "SELECT COUNT(*) FROM users u WHERE NOT EXISTS "
             "(SELECT 1 FROM reviews r WHERE r.user_id=u.id)",
             "hard",
@@ -642,7 +642,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月人均消费金额是多少？（按当月有下单的用户平摊，跳过金额缺失的订单）",
+                f"{m} 月人均消费金额是多少？（按当月有下单的用户平摊，不排除任何订单状态，跳过金额缺失的订单）",
                 f"SELECT SUM(total_amount)/COUNT(DISTINCT user_id) AS arpu FROM orders "
                 f"WHERE {month_filter('created_at', m)}",
                 "hard",
@@ -653,7 +653,7 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月 GMV 最高的前 5 个商品、其名称及所属一级类目？",
+                f"{m} 月 GMV 最高的前 5 个商品、其名称及所属一级类目？（用每日商品指标宽表的 gmv 列统计）",
                 f"SELECT p.name AS product, p1.name AS category, SUM(d.gmv) AS total_gmv "
                 f"FROM daily_product_metrics d JOIN products p ON d.product_id=p.id "
                 f"JOIN categories c ON p.category_id=c.id JOIN categories p1 ON c.parent_id=p1.id "

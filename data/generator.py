@@ -280,6 +280,7 @@ def build_schema(conn: sqlite3.Connection) -> None:
         CREATE INDEX idx_items_order ON order_items(order_id);
         CREATE INDEX idx_items_product ON order_items(product_id);
         CREATE INDEX idx_reviews_product ON reviews(product_id);
+        CREATE INDEX idx_reviews_user ON reviews(user_id);
         CREATE INDEX idx_dpm_product ON daily_product_metrics(product_id);
         CREATE INDEX idx_dua_user ON daily_user_activity(user_id);
         """
