@@ -323,8 +323,8 @@ def build_entries() -> list[dict]:
     es.append(
         entry(
             58,
-            "支付方式一共有几种？",
-            "SELECT COUNT(DISTINCT method) FROM payments",
+            "支付方式一共有几种？（wechat/Wechat 等大小写变体算同一种）",
+            "SELECT COUNT(DISTINCT LOWER(method)) FROM payments",
             "easy",
             ["distinct"],
         )

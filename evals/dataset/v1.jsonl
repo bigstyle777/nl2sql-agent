@@ -55,7 +55,7 @@
 {"id": 55, "question": "北京的默认收货地址有多少条？", "gold_sql": "SELECT COUNT(*) FROM addresses WHERE is_default=1 AND city='北京'", "difficulty": "easy", "tags": ["filter"]}
 {"id": 56, "question": "成本高于 100 元的在售商品有多少个？", "gold_sql": "SELECT COUNT(*) FROM products WHERE cost>100 AND status='on_sale'", "difficulty": "easy", "tags": ["filter"]}
 {"id": 57, "question": "退款原因一共有多少种？", "gold_sql": "SELECT COUNT(DISTINCT reason) FROM refunds", "difficulty": "easy", "tags": ["distinct"]}
-{"id": 58, "question": "支付方式一共有几种？", "gold_sql": "SELECT COUNT(DISTINCT method) FROM payments", "difficulty": "easy", "tags": ["distinct"]}
+{"id": 58, "question": "支付方式一共有几种？（wechat/Wechat 等大小写变体算同一种）", "gold_sql": "SELECT COUNT(DISTINCT LOWER(method)) FROM payments", "difficulty": "easy", "tags": ["distinct"]}
 {"id": 59, "question": "单笔订单的最高金额是多少？", "gold_sql": "SELECT MAX(total_amount) FROM orders", "difficulty": "easy", "tags": ["aggregate"]}
 {"id": 60, "question": "最便宜的在售商品价格是多少？", "gold_sql": "SELECT MIN(price) FROM products WHERE status='on_sale'", "difficulty": "easy", "tags": ["aggregate"]}
 {"id": 61, "question": "各订单状态分别有多少笔订单、总金额是多少？（注意状态字段大小写不统一）", "gold_sql": "SELECT LOWER(status) AS status, COUNT(*) AS cnt, SUM(total_amount) AS amt FROM orders GROUP BY LOWER(status)", "difficulty": "medium", "tags": ["case_normalize", "group_by"]}
