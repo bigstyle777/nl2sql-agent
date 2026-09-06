@@ -154,11 +154,11 @@
 - [ ] 评测集扩充到 200 题 → **决策：暂缓**。120 题已支撑优化方向判断，扩充边际价值低，留作后续迭代
 - **产出：消融对比表（见 README），报告文件 evals/reports/opt*.json**
 
-### M5：打磨与上线（第 5 周）
-- [ ] 多模型一键切换（实现 2 个即可：如 GLM + DeepSeek）
-- [ ] 会话历史、SQL 明细展示、示例问题引导
-- [ ] 部署：Hugging Face Space 或便宜云服务器，简历附链接
-- [ ] README 定稿：架构图、优化数据表、演示 GIF、快速上手
+### M5：打磨与上线（第 5 周）✅
+- [x] 多模型一键切换（GLM / DeepSeek / 通义 / OpenAI 注册表 + 侧边栏切换，检测已配置 Key 的服务商）
+- [x] 会话历史、SQL 明细展示、示例问题引导
+- [x] 部署：Hugging Face Space（app_file: src/ui/app.py，首次启动自动建库，DEMO_SCALE 可调）+ 国内云服务器两套教程，见 deploy/README.md
+- [x] README 定稿：mermaid 架构图、优化数据表、快速上手、未来迭代（演示 GIF 待录）
 - **产出：可写进简历的完整项目**
 
 ---
