@@ -56,9 +56,9 @@ def test_dirty_data_is_present(db_path):
     path, _ = db_path
     conn = _conn(path)
     n_status = conn.execute("SELECT COUNT(DISTINCT status) FROM orders").fetchone()[0]
-    assert n_status > len(conn.execute("SELECT DISTINCT LOWER(status) FROM orders").fetchall()), (
-        "状态大小写应存在不一致变体"
-    )
+    assert n_status > len(
+        conn.execute("SELECT DISTINCT LOWER(status) FROM orders").fetchall()
+    ), "状态大小写应存在不一致变体"
     assert conn.execute("SELECT COUNT(*) FROM orders WHERE total_amount IS NULL").fetchone()[0] > 0
     assert conn.execute("SELECT COUNT(*) FROM orders WHERE total_amount < 0").fetchone()[0] > 0
     assert conn.execute("SELECT COUNT(*) FROM products WHERE category_id IS NULL").fetchone()[0] > 0
