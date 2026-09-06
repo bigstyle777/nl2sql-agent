@@ -1,0 +1,37 @@
+{
+  "total": 120,
+  "correct": 105,
+  "exec_accuracy": 87.5,
+  "first_round_pass": 87.5,
+  "saved_by_correction": 0.0,
+  "saved_count": 0,
+  "first_round_fail_count": 15,
+  "avg_latency_s": 3.3,
+  "p50_latency_s": 3.09,
+  "p95_latency_s": 4.44,
+  "avg_total_tokens": 1773,
+  "avg_llm_calls": 2.07,
+  "by_difficulty": {
+    "easy": {
+      "total": 60,
+      "accuracy": 100.0
+    },
+    "medium": {
+      "total": 40,
+      "accuracy": 87.5
+    },
+    "hard": {
+      "total": 20,
+      "accuracy": 50.0
+    }
+  },
+  "attribution": {
+    "wrong_result": 15
+  },
+  "tag": "opt1-hints-v2",
+  "git_commit": "e679b51",
+  "timestamp": "2026-09-06T21:01:35",
+  "model": "deepseek/deepseek-chat",
+  "dataset": "v1.jsonl",
+  "wall_time_s": 73.3
+}

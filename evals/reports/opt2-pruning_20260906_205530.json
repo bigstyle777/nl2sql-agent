@@ -1,0 +1,38 @@
+{
+  "total": 120,
+  "correct": 87,
+  "exec_accuracy": 72.5,
+  "first_round_pass": 72.5,
+  "saved_by_correction": 0.0,
+  "saved_count": 0,
+  "first_round_fail_count": 33,
+  "avg_latency_s": 2.9,
+  "p50_latency_s": 2.48,
+  "p95_latency_s": 4.52,
+  "avg_total_tokens": 1483,
+  "avg_llm_calls": 3.08,
+  "by_difficulty": {
+    "easy": {
+      "total": 60,
+      "accuracy": 83.3
+    },
+    "medium": {
+      "total": 40,
+      "accuracy": 77.5
+    },
+    "hard": {
+      "total": 20,
+      "accuracy": 30.0
+    }
+  },
+  "attribution": {
+    "wrong_result": 32,
+    "exec_error": 1
+  },
+  "tag": "opt2-pruning",
+  "git_commit": "e679b51",
+  "timestamp": "2026-09-06T20:55:30",
+  "model": "deepseek/deepseek-chat",
+  "dataset": "v1.jsonl",
+  "wall_time_s": 63.7
+}

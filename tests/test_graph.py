@@ -36,6 +36,8 @@ class FakeLLM:
             return self._resp(self.sql)
         if "数据分析助手" in system:
             return self._resp(self.answer)
+        if "表清单" in system:  # 选表节点
+            return self._resp("orders, users")
         return self._resp("改写后的问题")  # 理解节点
 
 
@@ -48,7 +50,7 @@ def conn(tmp_path_factory):
 
 def test_happy_path_single_round(conn):
     fake = FakeLLM()
-    state = run(build_graph(client=fake, conn=conn), "总共有多少订单")
+    state = run(build_graph(client=fake, conn=conn, use_table_selection=False), "总共有多少订单")
 
     assert state["error"] == ""
     assert state["columns"] == ["n"]
@@ -62,7 +64,7 @@ def test_happy_path_single_round(conn):
 
 def test_relative_time_triggers_rewrite(conn):
     fake = FakeLLM()
-    state = run(build_graph(client=fake, conn=conn), "上个月的订单总额")
+    state = run(build_graph(client=fake, conn=conn, use_table_selection=False), "上个月的订单总额")
 
     assert state["expanded_question"] == "改写后的问题"
     assert len(fake.calls) == 3  # 改写 + 生成 + 回答
@@ -74,7 +76,7 @@ def test_error_triggers_correction_loop(conn):
         sql="SELECT * FROM no_such_table",
         fixed_sql="SELECT COUNT(*) AS n FROM orders",
     )
-    state = run(build_graph(client=fake, conn=conn), "总共有多少订单")
+    state = run(build_graph(client=fake, conn=conn, use_table_selection=False), "总共有多少订单")
 
     assert state["attempts"] == 2
     assert state["error"] == ""
@@ -87,7 +89,10 @@ def test_error_triggers_correction_loop(conn):
 def test_attempts_exhausted_no_infinite_loop(conn):
     """始终报错时必须在 MAX_ATTEMPTS 轮后终止，并把失败原因交给回答节点。"""
     fake = FakeLLM(sql="SELECT * FROM no_such_table")
-    state = run(build_graph(client=fake, conn=conn, max_attempts=3), "总共有多少订单")
+    state = run(
+        build_graph(client=fake, conn=conn, max_attempts=3, use_table_selection=False),
+        "总共有多少订单",
+    )
 
     assert state["attempts"] == 3
     assert "no_such_table" in state["error"]
@@ -104,7 +109,9 @@ def test_sanity_case_inconsistency_triggers_correction(conn):
             "FROM orders GROUP BY LOWER(status)"
         ),
     )
-    state = run(build_graph(client=fake, conn=conn), "各订单状态的订单数量")
+    state = run(
+        build_graph(client=fake, conn=conn, use_table_selection=False), "各订单状态的订单数量"
+    )
 
     assert state["attempts"] == 2
     assert "LOWER" in fake.calls[2]["messages"]  # 反馈要求归一
@@ -116,7 +123,10 @@ def test_empty_result_retries_until_exhausted(conn):
     fake = FakeLLM(
         sql="SELECT id FROM orders WHERE 1 = 0", fixed_sql="SELECT id FROM orders WHERE 1 = 0"
     )
-    state = run(build_graph(client=fake, conn=conn, max_attempts=2), "查点不存在的东西")
+    state = run(
+        build_graph(client=fake, conn=conn, max_attempts=2, use_table_selection=False),
+        "查点不存在的东西",
+    )
 
     assert state["attempts"] == 2
     assert state["feedback"] != ""
@@ -135,3 +145,63 @@ def test_extract_sql_handles_code_fence():
     assert extract_sql("```sql\nSELECT 1\n```") == "SELECT 1"
     assert extract_sql("SELECT 1;") == "SELECT 1"
     assert extract_sql("纯文本但没有SQL") == "纯文本但没有SQL"
+
+
+def test_select_tables_node(conn):
+    """选表节点应把 DDL 裁剪到选中的表。"""
+
+    from src.agent.nodes.select_tables import make_select_tables_node
+    from src.db.engine import get_ddl_by_table
+
+    ddl_by_table = get_ddl_by_table(conn)
+    fake = FakeLLM()
+    # FakeLLM 对非生成/回答/理解的调用（即选表）返回表名列表
+    node = make_select_tables_node(fake, ddl_by_table)
+    full_ddl = "\n\n".join(ddl_by_table.values())
+
+    state = node({"expanded_question": "各订单状态的订单数", "ddl": full_ddl})
+    assert set(state["selected_tables"]) == {"orders", "users"}
+    assert "CREATE TABLE orders" in state["ddl_subset"]
+    assert "CREATE TABLE reviews" not in state["ddl_subset"]
+
+
+def test_select_tables_fallback_on_invalid_or_all():
+    from src.agent.nodes.select_tables import make_select_tables_node
+
+    ddl_by_table = {
+        "orders": "CREATE TABLE orders (id INTEGER)",
+        "users": "CREATE TABLE users (id INTEGER)",
+    }
+
+    class Pick:
+        def __init__(self, content):
+            self.content = content
+
+        def chat(self, messages, system=None, **kw):
+            return type("R", (), {"content": self.content, "usage": {}})()
+
+    node = make_select_tables_node(Pick("nonexistent_table"), ddl_by_table)
+    state = node({"expanded_question": "q"})
+    assert state["selected_tables"] == []  # 无效表名 → 全量兜底
+
+    node2 = make_select_tables_node(Pick("orders, users"), ddl_by_table)
+    state2 = node2({"expanded_question": "q"})
+    assert state2["selected_tables"] == []  # 全选 = 无裁剪收益，回退全量
+    assert "CREATE TABLE orders" in state2["ddl_subset"]
+
+
+def test_hints_included_in_generate_prompt(conn):
+    """语义增强开启时，生成 prompt 应包含枚举值与日期惯用写法提示。"""
+    fake = FakeLLM()
+    run(build_graph(client=fake, conn=conn, use_table_selection=False), "总共有多少订单")
+    assert "on_sale" in fake.calls[0]["system"]
+    assert "replace(substr" in fake.calls[0]["system"]
+
+
+def test_hints_disabled(conn):
+    fake = FakeLLM()
+    run(
+        build_graph(client=fake, conn=conn, use_table_selection=False, use_hints=False),
+        "总共有多少订单",
+    )
+    assert "on_sale" not in fake.calls[0]["system"]
