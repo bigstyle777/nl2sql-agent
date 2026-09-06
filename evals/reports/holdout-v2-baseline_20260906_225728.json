@@ -1,0 +1,37 @@
+{
+  "total": 40,
+  "correct": 22,
+  "exec_accuracy": 55.0,
+  "first_round_pass": 55.0,
+  "saved_by_correction": 0.0,
+  "saved_count": 0,
+  "first_round_fail_count": 18,
+  "avg_latency_s": 2.6,
+  "p50_latency_s": 2.5,
+  "p95_latency_s": 5.17,
+  "avg_total_tokens": 1486,
+  "avg_llm_calls": 2.12,
+  "by_difficulty": {
+    "easy": {
+      "total": 12,
+      "accuracy": 75.0
+    },
+    "medium": {
+      "total": 16,
+      "accuracy": 50.0
+    },
+    "hard": {
+      "total": 12,
+      "accuracy": 41.7
+    }
+  },
+  "attribution": {
+    "wrong_result": 18
+  },
+  "tag": "holdout-v2-baseline",
+  "git_commit": "a0d2f78",
+  "timestamp": "2026-09-06T22:57:28",
+  "model": "deepseek/deepseek-chat",
+  "dataset": "holdout-v2.jsonl",
+  "wall_time_s": 787.8
+}
