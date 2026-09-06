@@ -12,10 +12,6 @@ __pycache__/
 # Generated data (regenerable via data/generator.py)
 data/*.db
 
-# Evaluation artifacts
-evals/reports/*.csv
-evals/reports/*.json
-
 # OS / IDE
 .DS_Store
 Thumbs.db
