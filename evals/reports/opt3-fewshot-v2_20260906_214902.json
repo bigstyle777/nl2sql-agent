@@ -1,0 +1,37 @@
+{
+  "total": 120,
+  "correct": 119,
+  "exec_accuracy": 99.2,
+  "first_round_pass": 99.2,
+  "saved_by_correction": 0.0,
+  "saved_count": 0,
+  "first_round_fail_count": 1,
+  "avg_latency_s": 2.0,
+  "p50_latency_s": 1.89,
+  "p95_latency_s": 3.17,
+  "avg_total_tokens": 1787,
+  "avg_llm_calls": 2.0,
+  "by_difficulty": {
+    "easy": {
+      "total": 60,
+      "accuracy": 98.3
+    },
+    "medium": {
+      "total": 40,
+      "accuracy": 100.0
+    },
+    "hard": {
+      "total": 20,
+      "accuracy": 100.0
+    }
+  },
+  "attribution": {
+    "wrong_result": 1
+  },
+  "tag": "opt3-fewshot-v2",
+  "git_commit": "7fe5e82",
+  "timestamp": "2026-09-06T21:49:02",
+  "model": "deepseek/deepseek-chat",
+  "dataset": "v1.jsonl",
+  "wall_time_s": 44.6
+}
