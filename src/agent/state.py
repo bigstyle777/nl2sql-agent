@@ -10,6 +10,8 @@ class AgentState(TypedDict, total=False):
     expanded_question: str  # 理解节点改写后的问题（消解相对时间等）
     ddl: str  # 业务库建表语句
     data_range: str  # 业务数据时间范围，如 "2025-01-01 至 2025-04-29"
+    selected_tables: list[str]  # 选表节点选中的表（空 = 未裁剪，用全量 DDL）
+    ddl_subset: str  # 裁剪后的 DDL 子集
     sql: str  # 生成的 SQL
     columns: list[str]  # 结果列名
     rows: list[tuple]  # 结果行

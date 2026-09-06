@@ -33,6 +33,8 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None, help="只跑前 N 题（冒烟用）")
     parser.add_argument("--qids", default=None, help="逗号分隔的题目 id，只跑这些题")
     parser.add_argument("--max-attempts", type=int, default=3)
+    parser.add_argument("--no-hints", action="store_true", help="关闭 schema 语义增强（消融用）")
+    parser.add_argument("--selection", action="store_true", help="开启动态 schema 裁剪（消融用）")
     args = parser.parse_args()
 
     qids = [int(x) for x in args.qids.split(",")] if args.qids else None
@@ -54,6 +56,8 @@ def main() -> None:
         max_attempts=args.max_attempts,
         limit=args.limit,
         qids=qids,
+        use_hints=not args.no_hints,
+        use_table_selection=args.selection,
         progress_cb=lambda done, total: (
             print(f"  进度 {done}/{total}", flush=True) if done % 10 == 0 or done == total else None
         ),

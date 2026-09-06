@@ -59,14 +59,27 @@ def load_dataset(path: Path) -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
-def evaluate_question(item: dict, base_client, db_path, max_attempts: int = 3) -> QuestionResult:
+def evaluate_question(
+    item: dict,
+    base_client,
+    db_path,
+    max_attempts: int = 3,
+    use_hints: bool = True,
+    use_table_selection: bool = True,
+) -> QuestionResult:
     """在独立连接上评测单题（sqlite 连接不可跨线程共享，按题新建）。"""
     from src.agent.graph import build_graph, run
 
     recorder = UsageRecorder(inner=base_client)
     conn = engine.connect(db_path)
     try:
-        graph = build_graph(client=recorder, conn=conn, max_attempts=max_attempts)
+        graph = build_graph(
+            client=recorder,
+            conn=conn,
+            max_attempts=max_attempts,
+            use_hints=use_hints,
+            use_table_selection=use_table_selection,
+        )
         t0 = time.monotonic()
         state = run(graph, item["question"])
         latency = time.monotonic() - t0
@@ -170,6 +183,8 @@ def run_dataset(
     limit: int | None = None,
     qids: list[int] | None = None,
     progress_cb=None,
+    use_hints: bool = True,
+    use_table_selection: bool = True,
 ) -> tuple[list[QuestionResult], dict]:
     items = load_dataset(dataset_path)
     if qids:
@@ -180,7 +195,16 @@ def run_dataset(
     results: list[QuestionResult] = []
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futures = [
-            pool.submit(evaluate_question, it, base_client, db_path, max_attempts) for it in items
+            pool.submit(
+                evaluate_question,
+                it,
+                base_client,
+                db_path,
+                max_attempts,
+                use_hints,
+                use_table_selection,
+            )
+            for it in items
         ]
         for i, fut in enumerate(futures, 1):
             results.append(fut.result())
