@@ -642,7 +642,8 @@ def build_entries() -> list[dict]:
         es.append(
             entry(
                 i,
-                f"{m} 月人均消费金额是多少？（按当月有下单的用户平摊，不排除任何订单状态，跳过金额缺失的订单）",
+                f"{m} 月人均消费金额是多少？（按当月有下单的用户平摊，不排除任何订单状态；"
+                "金额缺失的订单不计入总额，但下单用户仍计入分母）",
                 f"SELECT SUM(total_amount)/COUNT(DISTINCT user_id) AS arpu FROM orders "
                 f"WHERE {month_filter('created_at', m)}",
                 "hard",
