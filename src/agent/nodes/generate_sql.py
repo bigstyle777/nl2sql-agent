@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from src.db.engine import COLUMN_HINTS
+
 from ..state import AgentState
 
 GENERATE_PROMPT = """你是 SQLite 专家。根据表结构和分析问题，写出一条查询语句。
@@ -25,7 +27,7 @@ def extract_sql(text: str) -> str:
     return sql.strip().rstrip(";").strip()
 
 
-def make_generate_sql_node(client):
+def make_generate_sql_node(client, use_hints: bool = True):
     def generate_sql(state: AgentState) -> dict:
         feedback = state.get("feedback", "")
         if feedback:
@@ -38,11 +40,18 @@ def make_generate_sql_node(client):
             )
         else:
             user = f"分析问题：{state['expanded_question']}"
+
+        # 动态裁剪：优先用选出的表子集；报"表不存在"说明选表漏了，回退全量
+        ddl_text = state.get("ddl_subset") or state["ddl"]
+        if feedback and ("不存在" in feedback or "no such table" in feedback.lower()):
+            ddl_text = state["ddl"]
+
+        hints = f"\n\n{COLUMN_HINTS}" if use_hints else ""
         result = client.chat(
             user,
             system=(
-                f"{GENERATE_PROMPT}\n\n表结构（DDL）：\n{state['ddl']}\n\n"
-                f"业务数据时间范围：{state['data_range']}"
+                f"{GENERATE_PROMPT}\n\n表结构（DDL）：\n{ddl_text}"
+                f"{hints}\n\n业务数据时间范围：{state['data_range']}"
             ),
         )
         return {"sql": extract_sql(result.content)}
