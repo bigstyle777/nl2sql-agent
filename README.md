@@ -2,7 +2,7 @@
 
 基于 LangGraph 的 Text-to-SQL 数据分析 Agent：自然语言提问 → SQL 生成 → 沙箱执行 → 自纠错重试 → 图表与结论输出，配套自建评测集与量化对比报告。
 
-> 规划文档见 [PLAN.md](PLAN.md)。当前进度：M0（仓库地基）。
+> 规划文档见 [PLAN.md](PLAN.md)。当前进度：M1（最小闭环）✅
 
 ## 快速开始
 
@@ -22,6 +22,9 @@ python data/generator.py
 
 # 5. 冒烟测试 LLM 连通性
 python scripts/smoke_llm.py "上月各品类销售额是多少"
+
+# 6. 启动 Web 界面
+python -m streamlit run src/ui/app.py
 ```
 
 ## 目录结构

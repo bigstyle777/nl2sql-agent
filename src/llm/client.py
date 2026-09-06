@@ -39,6 +39,18 @@ PROVIDERS: dict[str, Provider] = {
 RETRYABLE_ERRORS = (ConnectionError, TimeoutError)
 
 
+def _make_openai_client(api_key: str, base_url: str, timeout: float):
+    """配置了 Langfuse Key 时自动换用其 drop-in 客户端（所有调用上报追踪）；否则返回原生客户端。"""
+    if os.getenv("LANGFUSE_PUBLIC_KEY") and os.getenv("LANGFUSE_SECRET_KEY"):
+        try:
+            from langfuse.openai import OpenAI as TracedOpenAI
+
+            return TracedOpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+        except ImportError:
+            pass
+    return OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
+
+
 @dataclass(frozen=True)
 class LLMConfig:
     provider: str
@@ -95,9 +107,7 @@ class LLMClient:
         self.config = config or resolve_config()
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
-        self._client = OpenAI(
-            api_key=self.config.api_key, base_url=self.config.base_url, timeout=timeout
-        )
+        self._client = _make_openai_client(self.config.api_key, self.config.base_url, timeout)
 
     def chat(
         self,
