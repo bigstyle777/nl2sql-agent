@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environment & secrets
+.env
+
+# Generated data (regenerable via data/generator.py)
+data/*.db
+
+# Evaluation artifacts
+evals/reports/*.csv
+evals/reports/*.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
