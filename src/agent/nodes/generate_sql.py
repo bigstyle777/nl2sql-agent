@@ -6,6 +6,7 @@ import re
 
 from src.db.engine import COLUMN_HINTS
 
+from ..fewshot import format_examples, retrieve_examples
 from ..state import AgentState
 
 GENERATE_PROMPT = """你是 SQLite 专家。根据表结构和分析问题，写出一条查询语句。
@@ -27,7 +28,7 @@ def extract_sql(text: str) -> str:
     return sql.strip().rstrip(";").strip()
 
 
-def make_generate_sql_node(client, use_hints: bool = True):
+def make_generate_sql_node(client, use_hints: bool = True, use_fewshot: bool = True):
     def generate_sql(state: AgentState) -> dict:
         feedback = state.get("feedback", "")
         if feedback:
@@ -47,11 +48,16 @@ def make_generate_sql_node(client, use_hints: bool = True):
             ddl_text = state["ddl"]
 
         hints = f"\n\n{COLUMN_HINTS}" if use_hints else ""
+        fewshot = ""
+        if use_fewshot:
+            examples = retrieve_examples(state["expanded_question"])
+            if examples:
+                fewshot = f"\n\n{format_examples(examples)}"
         result = client.chat(
             user,
             system=(
                 f"{GENERATE_PROMPT}\n\n表结构（DDL）：\n{ddl_text}"
-                f"{hints}\n\n业务数据时间范围：{state['data_range']}"
+                f"{hints}{fewshot}\n\n业务数据时间范围：{state['data_range']}"
             ),
         )
         return {"sql": extract_sql(result.content)}

@@ -65,6 +65,7 @@ def evaluate_question(
     db_path,
     max_attempts: int = 3,
     use_hints: bool = True,
+    use_fewshot: bool = True,
     use_table_selection: bool = True,
 ) -> QuestionResult:
     """在独立连接上评测单题（sqlite 连接不可跨线程共享，按题新建）。"""
@@ -78,6 +79,7 @@ def evaluate_question(
             conn=conn,
             max_attempts=max_attempts,
             use_hints=use_hints,
+            use_fewshot=use_fewshot,
             use_table_selection=use_table_selection,
         )
         t0 = time.monotonic()
@@ -184,6 +186,7 @@ def run_dataset(
     qids: list[int] | None = None,
     progress_cb=None,
     use_hints: bool = True,
+    use_fewshot: bool = True,
     use_table_selection: bool = True,
 ) -> tuple[list[QuestionResult], dict]:
     items = load_dataset(dataset_path)
@@ -202,6 +205,7 @@ def run_dataset(
                 db_path,
                 max_attempts,
                 use_hints,
+                use_fewshot,
                 use_table_selection,
             )
             for it in items

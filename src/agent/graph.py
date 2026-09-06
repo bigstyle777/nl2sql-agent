@@ -30,6 +30,7 @@ def build_graph(
     conn=None,
     max_attempts: int = 3,
     use_hints: bool = True,
+    use_fewshot: bool = True,
     use_table_selection: bool = False,
 ):
     """组装 Agent 图。client/conn 支持注入，便于测试时替换为假实现。
@@ -38,6 +39,7 @@ def build_graph(
     - use_hints：schema 语义增强，准确率 78.3% -> 87.5%，默认开启
     - use_table_selection：动态裁剪，token -13.6% 但准确率 -4.2pt（14 表小 schema
       下选表开销与漏选风险大于 DDL 收益），默认关闭；大 schema 场景可开启
+    - use_fewshot：few-shot 示例检索（归因驱动的惯用写法示范），hard 题主要收益点
     """
     if client is None:
         from src.llm.client import LLMClient
@@ -54,7 +56,10 @@ def build_graph(
 
     builder = StateGraph(AgentState)
     builder.add_node("understand", make_understand_node(client))
-    builder.add_node("generate_sql", make_generate_sql_node(client, use_hints=use_hints))
+    builder.add_node(
+        "generate_sql",
+        make_generate_sql_node(client, use_hints=use_hints, use_fewshot=use_fewshot),
+    )
     builder.add_node("execute", make_execute_node(conn))
     builder.add_node("check", check)
     builder.add_node("answer", make_answer_node(client))
