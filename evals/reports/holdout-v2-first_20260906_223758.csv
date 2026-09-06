@@ -1,0 +1,213 @@
+﻿qid,difficulty,question,correct,attribution,attempts,first_round_pass,reason,latency_s,total_tokens,llm_calls,pred_sql,gold_sql,tags
+1,easy,现在一共有多少个商品？,True,correct,1,False,,5.5,1496,2,SELECT COUNT(*) FROM products,SELECT COUNT(*) FROM products,['count']
+2,easy,卖得最贵的商品标价多少？,True,correct,1,False,,5.5,1523,2,SELECT price FROM products ORDER BY price DESC LIMIT 1,SELECT MAX(price) FROM products,['aggregate']
+3,easy,有多少用户领过优惠券？,True,correct,1,False,,5.5,1541,2,SELECT COUNT(DISTINCT user_id) AS coupon_users_count FROM user_coupons,SELECT COUNT(DISTINCT user_id) FROM user_coupons,['distinct']
+4,easy,北京和上海的用户加起来有多少个？,True,correct,1,False,,5.55,1516,2,"SELECT COUNT(*) AS total_users FROM users WHERE city IN ('北京', '上海')","SELECT COUNT(*) FROM users WHERE city IN ('北京','上海')",['filter']
+5,easy,平均每个用户下几单？,True,correct,1,False,,6.88,1610,2,"SELECT CAST(COUNT(DISTINCT o.id) AS REAL) / COUNT(DISTINCT o.user_id) AS avg_orders_per_user
+FROM orders o",SELECT COUNT(*) * 1.0 / COUNT(DISTINCT user_id) FROM orders,['ratio']
+6,easy,有多少订单没记录金额？,True,correct,1,False,,5.5,1535,2,SELECT COUNT(*) FROM orders WHERE total_amount IS NULL,SELECT COUNT(*) FROM orders WHERE total_amount IS NULL,['null']
+7,easy,评分满分的评价有多少条？,True,correct,1,False,,1.34,1513,2,SELECT COUNT(*) FROM reviews WHERE rating = 5,SELECT COUNT(*) FROM reviews WHERE rating=5,['filter']
+8,easy,杭州的卖家平均评分多少？,True,correct,1,False,,2.03,1557,2,SELECT AVG(rating) AS avg_rating FROM sellers WHERE city = '杭州',SELECT AVG(rating) FROM sellers WHERE city='杭州',['aggregate']
+9,easy,成功支付的订单里，用支付宝（alipay）的有多少笔？,True,correct,1,False,,3.39,1682,2,"SELECT COUNT(DISTINCT o.id) AS alipay_success_order_count
+FROM orders o
+INNER JOIN payments p ON o.id = p.order_id
+WHERE LOWER(p.method) = 'alipay'
+  AND LOWER(p.status) = 'success'
+  AND o.pay_time IS NOT NULL",SELECT COUNT(*) FROM payments WHERE method='alipay' AND status='success',['filter']
+10,easy,在售商品里库存最少的那件还剩几件？,True,correct,1,False,,2.69,1569,2,SELECT stock FROM products WHERE status = 'on_sale' ORDER BY stock ASC LIMIT 1,SELECT MIN(stock) FROM products WHERE status='on_sale',['aggregate']
+11,easy,还没支付过的订单有多少笔？,True,correct,1,False,,3.36,1563,2,SELECT COUNT(*) FROM orders WHERE pay_time IS NULL OR pay_time = '',SELECT COUNT(*) FROM orders WHERE pay_time IS NULL,['null']
+12,easy,3 月 15 日当天有多少用户活跃？,True,correct,1,False,,2.03,1583,2,SELECT COUNT(DISTINCT user_id) AS active_users FROM daily_user_activity WHERE date = '2025-03-15',SELECT COUNT(DISTINCT user_id) FROM daily_user_activity WHERE date='2025-03-15',['wide_table']
+13,medium,活跃记录里，每种设备各有多少不同的活跃用户？,True,correct,1,False,,4.83,1633,2,"SELECT device, COUNT(DISTINCT user_id) AS active_users
+FROM daily_user_activity
+GROUP BY device","SELECT device, COUNT(DISTINCT user_id) AS users FROM daily_user_activity GROUP BY device","['wide_table', 'distinct']"
+14,medium,2025 年 2 月每天的退款金额是多少？,True,correct,1,False,,3.47,2468,2,"SELECT replace(substr(r.refunded_at,1,10),'/','-') AS day, SUM(r.amount) AS refund_amount
+FROM refunds r
+WHERE replace(substr(r.refunded_at,1,7),'/','-') = '2025-02'
+GROUP BY day
+ORDER BY day","SELECT replace(substr(refunded_at,1,10),'/','-') AS day, SUM(amount) AS amt FROM refunds WHERE replace(substr(refunded_at,1,7),'/','-')='2025-02' GROUP BY day","['date_format_trap', 'time_series']"
+15,medium,有多少商品从来没被退过款？,True,correct,1,False,,4.19,1605,2,SELECT COUNT(*) FROM products p WHERE NOT EXISTS (SELECT 1 FROM order_items oi JOIN refunds r ON r.order_item_id = oi.id WHERE oi.product_id = p.id),SELECT COUNT(*) FROM products p WHERE NOT EXISTS (SELECT 1 FROM order_items oi JOIN refunds r ON r.order_item_id=oi.id WHERE oi.product_id=p.id),['anti_join']
+16,medium,销售额排名前 3 的卖家是谁？各卖了多少？（按订单明细的 (单价-折扣)*数量 算）,True,correct,1,False,,3.53,2009,2,"SELECT s.name AS seller_name, SUM((oi.unit_price - oi.discount) * oi.quantity) AS total_sales
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.id
+JOIN sellers s ON oi.seller_id = s.id
+GROUP BY s.id
+ORDER BY total_sales DESC
+LIMIT 3","SELECT s.name AS seller, SUM((oi.unit_price-oi.discount)*oi.quantity) AS sales FROM order_items oi JOIN products p ON oi.product_id=p.id JOIN sellers s ON p.seller_id=s.id GROUP BY s.id ORDER BY sales DESC LIMIT 3","['join', 'top_n']"
+17,medium,3 月上半月（15 号及以前）和下半月的订单量各是多少？输出一行两列。,True,correct,1,False,,4.84,1835,2,"SELECT 
+  SUM(CASE WHEN replace(substr(created_at,1,10),'/','-') <= '2025-03-15' THEN 1 ELSE 0 END) AS first_half_orders,
+  SUM(CASE WHEN replace(substr(created_at,1,10),'/','-') > '2025-03-15' THEN 1 ELSE 0 END) AS second_half_orders
+FROM orders
+WHERE replace(substr(created_at,1,7),'/','-') = '2025-03'","SELECT SUM(CASE WHEN replace(substr(created_at,1,10),'/','-')<='2025-03-15' THEN 1 ELSE 0 END) AS first_half, SUM(CASE WHEN replace(substr(created_at,1,10),'/','-')>'2025-03-15' THEN 1 ELSE 0 END) AS second_half FROM orders WHERE replace(substr(created_at,1,7),'/','-')='2025-03'","['case', 'date_format_trap']"
+18,medium,3 月有哪些城市挤进了下单量前五？把名次（允许并列）也一起输出。,False,wrong_result,1,False,"第 0 行不一致（顺序敏感比较）：gold=('广州', 2196.0, 1.0) pred=('未知', 5842.0, 1.0)",4.84,1995,2,"SELECT city, order_count, rank
+FROM (
+    SELECT 
+        COALESCE(a.city, '未知') AS city,
+        COUNT(DISTINCT o.id) AS order_count,
+        RANK() OVER (ORDER BY COUNT(DISTINCT o.id) DESC) AS rank
+    FROM orders o
+    LEFT JOIN addresses a ON o.user_id = a.user_id AND a.is_default = 1
+    WHERE replace(substr(o.created_at,1,7),'/','-') = '2025-03'
+    GROUP BY COALESCE(a.city, '未知')
+) ranked
+WHERE rank <= 5
+ORDER BY rank, order_count DESC","SELECT city, cnt, rk FROM (SELECT u.city AS city, COUNT(*) AS cnt, RANK() OVER (ORDER BY COUNT(*) DESC) AS rk FROM orders o JOIN users u ON o.user_id=u.id WHERE u.city IS NOT NULL AND replace(substr(o.created_at,1,7),'/','-')='2025-03' GROUP BY u.city) WHERE rk<=5","['window', 'top_n']"
+19,medium,VIP 用户（等级大于 0）里，每个等级分别有多少人？,True,correct,1,False,,2.8,1642,2,"SELECT vip_level, COUNT(*) AS user_count
+FROM users
+WHERE vip_level > 0
+GROUP BY vip_level","SELECT vip_level, COUNT(*) AS cnt FROM users WHERE vip_level>0 GROUP BY vip_level",['group_by']
+20,medium,平均一单买几件东西？,True,correct,1,False,,3.47,1574,2,"SELECT ROUND(AVG(quantity), 2) AS avg_items_per_order
+FROM order_items",SELECT AVG(quantity) FROM order_items,['aggregate']
+21,medium,金额是负数的订单有多少笔？（数据里确实有这种异常单）,True,correct,1,False,,3.12,1570,2,SELECT COUNT(*) FROM orders WHERE total_amount < 0,SELECT COUNT(*) FROM orders WHERE total_amount<0,['dirty_data']
+22,medium,3 月订单量最多的前 3 天分别是哪几天？各下了多少单？,True,correct,1,False,,2.86,1776,2,"SELECT replace(substr(created_at,1,10),'/','-') AS order_date, COUNT(*) AS order_count
+FROM orders
+WHERE replace(substr(created_at,1,7),'/','-') = '2025-03'
+GROUP BY order_date
+ORDER BY order_count DESC
+LIMIT 3","SELECT replace(substr(created_at,1,10),'/','-') AS day, COUNT(*) AS cnt FROM orders WHERE replace(substr(created_at,1,7),'/','-')='2025-03' GROUP BY day ORDER BY cnt DESC LIMIT 3","['time_series', 'top_n']"
+23,medium,成本超过 500 的商品，平均标价是多少？,True,correct,1,False,,2.08,1565,2,SELECT AVG(price) AS avg_price FROM products WHERE cost > 500,SELECT AVG(price) FROM products WHERE cost>500,['filter']
+24,medium,有多少卖家到现在一个商品都没上架？,True,correct,1,False,,3.31,1585,2,SELECT COUNT(*) FROM sellers s WHERE NOT EXISTS (SELECT 1 FROM products p WHERE p.seller_id = s.id),SELECT COUNT(*) FROM sellers s WHERE NOT EXISTS (SELECT 1 FROM products p WHERE p.seller_id=s.id),['anti_join']
+25,medium,1 月活跃过的用户和 3 月活跃过的用户分别有多少个？输出一行两列。,True,correct,1,False,,4.69,1688,2,"SELECT 
+  COUNT(DISTINCT CASE WHEN date LIKE '2025-01%' THEN user_id END) AS jan_active_users,
+  COUNT(DISTINCT CASE WHEN date LIKE '2025-03%' THEN user_id END) AS mar_active_users
+FROM daily_user_activity","SELECT COUNT(DISTINCT CASE WHEN date LIKE '2025-01%' THEN user_id END) AS jan_users, COUNT(DISTINCT CASE WHEN date LIKE '2025-03%' THEN user_id END) AS mar_users FROM daily_user_activity","['case', 'wide_table']"
+26,medium,评价内容里提到'物流'的评价有多少条？,True,correct,1,False,,2.75,1515,2,SELECT COUNT(*) FROM reviews WHERE content LIKE '%物流%',SELECT COUNT(*) FROM reviews WHERE content LIKE '%物流%',['like']
+27,medium,库存总量最大的前 3 个二级类目是哪些？各多少库存？,True,correct,1,False,,5.52,1899,2,"SELECT c.name AS category, SUM(p.stock) AS total_stock
+FROM products p
+JOIN categories c ON p.category_id = c.id
+WHERE c.parent_id IS NOT NULL
+GROUP BY c.id
+ORDER BY total_stock DESC
+LIMIT 3","SELECT c.name AS category, SUM(p.stock) AS total_stock FROM products p JOIN categories c ON p.category_id=c.id WHERE c.parent_id IS NOT NULL GROUP BY c.id ORDER BY total_stock DESC LIMIT 3","['join', 'top_n']"
+28,medium,3 月的订单平均每单带几件商品？,False,wrong_result,1,False,"第 0 行不一致（集合比较）：gold=(1.792911825282711,) pred=(2.335988808145183,)",4.83,1750,2,"SELECT 
+    CAST(SUM(oi.quantity) AS REAL) / COUNT(DISTINCT o.id) AS avg_items_per_order
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.id
+WHERE replace(substr(o.created_at, 1, 7), '/', '-') = '2025-03'","SELECT AVG(n) FROM (SELECT COUNT(*) AS n FROM order_items oi JOIN orders o ON oi.order_id=o.id WHERE replace(substr(o.created_at,1,7),'/','-')='2025-03' GROUP BY o.id)","['subquery', 'date_format_trap']"
+29,hard,每个月的订单量是多少？相比上个月的增长比例是多少？（首月增长记空）,False,wrong_result,1,False,"第 1 行不一致（顺序敏感比较）：gold=('2025-02', 23415.0, -0.09897256320467929) pred=('2025-02', 23415.0, -9.9)",8.92,2332,3,"SELECT 
+    month,
+    order_count,
+    CASE 
+        WHEN LAG(order_count) OVER (ORDER BY month) IS NULL THEN NULL
+        ELSE ROUND((order_count - LAG(order_count) OVER (ORDER BY month)) * 100.0 / LAG(order_count) OVER (ORDER BY month), 2)
+    END AS growth_rate
+FROM (
+    SELECT 
+        replace(substr(created_at, 1, 7), '/', '-') AS month,
+        COUNT(*) AS order_count
+    FROM orders
+    WHERE replace(substr(created_at, 1, 10), '/', '-') BETWEEN '2025-01-01' AND '2025-04-30'
+    GROUP BY replace(substr(created_at, 1, 7), '/', '-')
+) t
+ORDER BY month","SELECT mon, cnt, cnt * 1.0 / LAG(cnt) OVER (ORDER BY mon) - 1 AS growth FROM (SELECT replace(substr(created_at,1,7),'/','-') AS mon, COUNT(*) AS cnt FROM orders GROUP BY mon)","['window', 'time_series']"
+30,hard,3 月每个一级类目里 GMV 最高的商品是哪个？,False,exec_error,3,False,OperationalError: interrupted,40.59,6214,3,"SELECT c1.name AS top_category, p.name AS product_name, SUM(oi.quantity * oi.unit_price - oi.discount) AS gmv
+FROM orders o
+JOIN order_items oi ON o.id = oi.order_id
+JOIN products p ON oi.product_id = p.id
+JOIN categories c ON p.category_id = c.id
+JOIN categories c1 ON c.parent_id = c1.id
+WHERE replace(substr(o.created_at,1,7),'/','-') = '2025-03'
+  AND LOWER(o.status) IN ('paid','shipped','completed')
+GROUP BY c1.id, p.id
+HAVING gmv = (
+    SELECT MAX(gmv2)
+    FROM (
+        SELECT 
+            c2.id AS cat_id,
+            SUM(oi2.quantity * oi2.unit_price - oi2.discount) AS gmv2
+        FROM orders o2
+        JOIN order_items oi2 ON o2.id = oi2.order_id
+        JOIN products p2 ON oi2.product_id = p2.id
+        JOIN categories c3 ON p2.category_id = c3.id
+        JOIN categories c2 ON c3.parent_id = c2.id
+        WHERE replace(substr(o2.created_at,1,7),'/','-') = '2025-03'
+          AND LOWER(o2.status) IN ('paid','shipped','completed')
+        GROUP BY c2.id, p2.id
+    ) sub
+    WHERE sub.cat_id = c1.id
+)
+ORDER BY c1.id","SELECT category, product FROM (SELECT p1.name AS category, p.name AS product, ROW_NUMBER() OVER (PARTITION BY p1.id ORDER BY SUM(d.gmv) DESC) AS rn FROM daily_product_metrics d JOIN products p ON d.product_id=p.id JOIN categories c ON p.category_id=c.id JOIN categories p1 ON c.parent_id=p1.id WHERE d.date LIKE '2025-03%' GROUP BY p1.id, p.id) WHERE rn=1","['window', 'wide_table', 'join']"
+31,hard,3 月人均会话数最高的渠道是最低渠道的多少倍？,False,wrong_result,1,False,"第 0 行不一致（集合比较）：gold=(1.0219359712992184,) pred=(1.007522640058696,)",5.53,1732,2,"SELECT 
+    MAX(avg_sessions) * 1.0 / MIN(avg_sessions) AS ratio
+FROM (
+    SELECT 
+        channel,
+        AVG(sessions) AS avg_sessions
+    FROM daily_user_activity
+    WHERE replace(substr(date,1,7),'/','-') = '2025-03'
+    GROUP BY channel
+)","SELECT (SELECT MAX(per_user) FROM (SELECT channel, SUM(sessions)*1.0/COUNT(DISTINCT user_id) AS per_user FROM daily_user_activity WHERE date LIKE '2025-03%' GROUP BY channel)) / (SELECT MIN(per_user) FROM (SELECT channel, SUM(sessions)*1.0/COUNT(DISTINCT user_id) AS per_user FROM daily_user_activity WHERE date LIKE '2025-03%' GROUP BY channel)) AS spread","['ratio', 'wide_table']"
+32,hard,有多少用户 3 月下过单但从来没有一笔支付成功的记录？,False,wrong_result,1,False,"第 0 行不一致（集合比较）：gold=(0.0,) pred=(188.0,)",5.55,1759,2,"SELECT COUNT(DISTINCT o.user_id)
+FROM orders o
+WHERE replace(substr(o.created_at,1,7),'/','-') = '2025-03'
+  AND o.user_id NOT IN (
+    SELECT DISTINCT o2.user_id
+    FROM orders o2
+    JOIN payments p ON p.order_id = o2.id
+    WHERE LOWER(p.status) = 'success'
+  )","SELECT COUNT(DISTINCT user_id) FROM orders WHERE user_id NOT IN (SELECT DISTINCT user_id FROM payments WHERE status='success') AND replace(substr(created_at,1,7),'/','-')='2025-03'",['anti_join']
+33,hard,退款率（退款金额/销售金额）最高的前 3 个卖家是谁？,False,wrong_result,1,False,列数不一致：gold=2 pred=3,6.77,2226,2,"SELECT s.id, s.name, 
+       COALESCE(SUM(r.amount), 0) / NULLIF(SUM(oi.unit_price * oi.quantity - oi.discount), 0) AS refund_rate
+FROM sellers s
+JOIN products p ON s.id = p.seller_id
+JOIN order_items oi ON p.id = oi.product_id
+JOIN orders o ON oi.order_id = o.id
+LEFT JOIN refunds r ON oi.id = r.order_item_id
+WHERE LOWER(o.status) IN ('paid', 'shipped', 'completed')
+GROUP BY s.id, s.name
+HAVING SUM(oi.unit_price * oi.quantity - oi.discount) > 0
+ORDER BY refund_rate DESC
+LIMIT 3","SELECT seller, refund_amt * 1.0 / sales_amt AS rate FROM (SELECT s.name AS seller, s.id AS sid, (SELECT COALESCE(SUM(r.amount),0) FROM refunds r JOIN order_items oi ON r.order_item_id=oi.id JOIN products p ON p.id=oi.product_id WHERE p.seller_id=s.id) AS refund_amt, (SELECT COALESCE(SUM((oi.unit_price-oi.discount)*oi.quantity),0) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=s.id) AS sales_amt FROM sellers s) WHERE sales_amt>0 ORDER BY rate DESC LIMIT 3","['ratio', 'correlated_subquery']"
+34,hard,3 月连续 3 天及以上每天都活跃的用户有多少个？,True,correct,1,False,,5.53,1805,2,"SELECT COUNT(*) FROM (
+    SELECT user_id
+    FROM (
+        SELECT user_id, date,
+               date(date, '-' || (ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY date) - 1) || ' days') AS grp
+        FROM daily_user_activity
+        WHERE date LIKE '2025-03%'
+        GROUP BY user_id, date
+    )
+    GROUP BY user_id, grp
+    HAVING COUNT(*) >= 3
+)","SELECT COUNT(*) FROM (SELECT user_id, grp FROM (SELECT user_id, CAST(julianday(date) AS INTEGER) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY date) AS grp FROM (SELECT DISTINCT user_id, date FROM daily_user_activity WHERE date LIKE '2025-03%')) GROUP BY user_id, grp HAVING COUNT(*)>=3)","['window', 'gaps_and_islands', 'wide_table']"
+35,hard,1 到 5 星的评价各有多少条？（越界的异常评分不要算进来）,True,correct,1,False,,3.2,1664,2,"SELECT rating, COUNT(*) AS cnt FROM reviews WHERE rating BETWEEN 1 AND 5 GROUP BY rating ORDER BY rating","SELECT rating, COUNT(*) AS cnt FROM reviews WHERE rating BETWEEN 1 AND 5 GROUP BY rating",['case_aware']
+36,hard,各支付方式（大小写变体算同一种）在 1 月和 3 月的成功支付金额分别是多少？输出每行一个方式、两列金额。,True,correct,1,False,,5.03,2073,2,"SELECT 
+    LOWER(method) AS payment_method,
+    SUM(CASE WHEN replace(substr(paid_at,1,7),'/','-') = '2025-01' THEN amount ELSE 0 END) AS jan_amount,
+    SUM(CASE WHEN replace(substr(paid_at,1,7),'/','-') = '2025-03' THEN amount ELSE 0 END) AS mar_amount
+FROM payments
+WHERE LOWER(status) = 'success'
+  AND (replace(substr(paid_at,1,7),'/','-') IN ('2025-01','2025-03'))
+GROUP BY LOWER(method)","SELECT LOWER(method) AS method, SUM(CASE WHEN replace(substr(paid_at,1,7),'/','-')='2025-01' THEN amount END) AS jan_amt, SUM(CASE WHEN replace(substr(paid_at,1,7),'/','-')='2025-03' THEN amount END) AS mar_amt FROM payments WHERE status='success' GROUP BY LOWER(method)","['case', 'date_format_trap']"
+37,hard,用户所在城市里，有多少个城市从没人下过单？,False,wrong_result,1,False,"第 0 行不一致（集合比较）：gold=(12.0,) pred=(0.0,)",3.86,1708,2,"SELECT COUNT(*) AS city_count
+FROM (
+    SELECT DISTINCT u.city
+    FROM users u
+    WHERE u.city IS NOT NULL
+      AND u.city NOT IN (
+          SELECT DISTINCT u2.city
+          FROM users u2
+          JOIN orders o ON o.user_id = u2.id
+          WHERE u2.city IS NOT NULL
+      )
+) t",SELECT COUNT(DISTINCT city) FROM users u WHERE u.city IS NOT NULL AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id=u.id),['anti_join']
+38,hard,金额最大的那一笔订单，下单用户的 VIP 等级是多少？,True,correct,1,False,,3.38,1684,2,"SELECT u.vip_level
+FROM orders o
+JOIN users u ON o.user_id = u.id
+ORDER BY o.total_amount DESC
+LIMIT 1",SELECT u.vip_level FROM orders o JOIN users u ON o.user_id=u.id WHERE o.total_amount=(SELECT MAX(total_amount) FROM orders),['subquery']
+39,hard,2 月还活跃、3 月就流失了的用户有多少个？,True,correct,1,False,,4.55,1824,2,"SELECT COUNT(DISTINCT u.id)
+FROM users u
+WHERE u.id IN (
+    SELECT user_id
+    FROM daily_user_activity
+    WHERE date LIKE '2025-02%'
+)
+AND u.id NOT IN (
+    SELECT user_id
+    FROM daily_user_activity
+    WHERE date LIKE '2025-03%'
+)",SELECT COUNT(DISTINCT user_id) FROM daily_user_activity WHERE date LIKE '2025-02%' AND user_id NOT IN (SELECT DISTINCT user_id FROM daily_user_activity WHERE date LIKE '2025-03%'),"['anti_join', 'wide_table']"
+40,hard,按用户的 VIP 等级分组，每组有多少个下过单的用户、平均订单金额是多少？,True,correct,1,False,,4.12,1785,2,"SELECT u.vip_level, COUNT(DISTINCT o.user_id) AS ordering_users, AVG(o.total_amount) AS avg_order_amount
+FROM users u
+JOIN orders o ON u.id = o.user_id
+GROUP BY u.vip_level","SELECT u.vip_level, COUNT(DISTINCT o.user_id) AS users, AVG(o.total_amount) AS avg_amt FROM orders o JOIN users u ON o.user_id=u.id GROUP BY u.vip_level","['join', 'group_by']"
