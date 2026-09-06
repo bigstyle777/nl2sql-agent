@@ -33,7 +33,12 @@ def make_answer_node(client):
         result = client.chat(
             f"分析问题：{state['expanded_question']}\n"
             f"执行的 SQL：\n{state['sql']}\n"
-            f"查询结果（JSON）：\n{json.dumps(payload, ensure_ascii=False, default=str)}",
+            f"查询结果（JSON）：\n{json.dumps(payload, ensure_ascii=False, default=str)}"
+            + (
+                f"\n\n注意：结果自检仍有未解决的反馈（已达重试上限）：{state.get('feedback')}。"
+                if state.get("feedback")
+                else ""
+            ),
             system=ANSWER_PROMPT,
         )
         return {"answer": result.content.strip()}

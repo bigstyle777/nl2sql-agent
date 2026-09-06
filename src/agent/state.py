@@ -15,4 +15,6 @@ class AgentState(TypedDict, total=False):
     rows: list[tuple]  # 结果行
     truncated: bool  # 结果是否被截断
     error: str  # 执行错误信息（空串表示无错误）
+    attempts: int  # 已执行的生成-执行轮数
+    feedback: str  # 自检反馈（报错或结果问题），非空时触发回炉重试
     answer: str  # 最终结论文本

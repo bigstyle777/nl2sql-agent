@@ -27,10 +27,23 @@ def extract_sql(text: str) -> str:
 
 def make_generate_sql_node(client):
     def generate_sql(state: AgentState) -> dict:
+        feedback = state.get("feedback", "")
+        if feedback:
+            # 自纠错：带着上一版 SQL 和问题反馈回炉重写
+            user = (
+                f"分析问题：{state['expanded_question']}\n\n"
+                f"你上一版生成的 SQL：\n{state['sql']}\n\n"
+                f"上一版的问题反馈：{feedback}\n\n"
+                "请针对反馈修正，输出修正后的完整 SQL。"
+            )
+        else:
+            user = f"分析问题：{state['expanded_question']}"
         result = client.chat(
-            f"分析问题：{state['expanded_question']}",
-            system=f"{GENERATE_PROMPT}\n\n表结构（DDL）：\n{state['ddl']}\n\n"
-            f"业务数据时间范围：{state['data_range']}",
+            user,
+            system=(
+                f"{GENERATE_PROMPT}\n\n表结构（DDL）：\n{state['ddl']}\n\n"
+                f"业务数据时间范围：{state['data_range']}"
+            ),
         )
         return {"sql": extract_sql(result.content)}
 

@@ -60,6 +60,11 @@ if question:
         st.error("SQL 执行出错，最终结果不可用。")
 
     with st.expander("🔍 执行明细"):
+        attempts = state.get("attempts", 1)
+        if attempts > 1:
+            st.success(f"🔄 自纠错生效：共执行 {attempts} 轮后成功")
+        if state.get("feedback"):
+            st.info(f"**最后一轮自检反馈**：{state['feedback']}")
         if state.get("expanded_question") != state.get("question"):
             st.markdown(f"**问题改写**：{state['expanded_question']}")
         st.code(state.get("sql", ""), language="sql")
